@@ -1,0 +1,1 @@
+/c/Program\ Files/OpenSCAD/openscad.com -o $2 $1

@@ -1,0 +1,1 @@
+find /c/ -iname 'openscad.com' 2> /dev/null 1>log.txt
