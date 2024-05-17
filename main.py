@@ -1,3 +1,5 @@
+import time
+
 import numpy
 from stl import mesh, Dimension
 
@@ -9,6 +11,17 @@ import solid
 import os
 import ezdxf
 import CadOps
+import subprocess
+
+root = Tk()
+
+file_path = askopenfilename()
+
+print(file_path)
+SCAD_FILE_PATH = file_path
+INPUT_FILE_PATH = 'C:/Users/Daniel/Documents/repos/Shell_Maker/renders'
+OUTPUT_PATH_DIR = "C:/Users/Daniel/Documents/repos/Shell_Maker/renders"
+
 
 def find_lengths(obj):
     minx = maxx = miny = maxy = minz = maxz = None
@@ -68,17 +81,20 @@ def Center(stlName):
         solid.import_stl(stlName)
     )
     solid.scad_render_to_file(m_centered, 'temp.scad')
-    os.system("toSTL.sh temp.scad " + stlName)
+    print(SCAD_FILE_PATH + " -o "+ stlName +" temp.scad")
+    subprocess.Popen(SCAD_FILE_PATH + " -o "+ stlName +" temp.scad")
+    # os.system("toSTL.sh temp.scad " + stlName)
+    time.sleep(5)
     os.remove("temp.scad")
 
-Center("CFFFP_Aeroshell-BasicBody-scaled2-top.stl")
+Center("Aeroshell-BasicBody-scaled2-top.stl")
 
 def slice(stlname, height):
     os.system("del renders\*")
+    # C:\Users\Daniel\Documents\repos\Shell_Maker
+    original_file = "c:"+"\\"+"users\Daniel\Documents\\repos\Shell_Maker\\"+stlname
 
-    original_file = "c:"+"\\"+"users\djash\PycharmProjects\STLOperations\\"+stlname
-
-    copy_file = "c:"+"\\"+"users\djash\PycharmProjects\STLOperations\\renders\\"+stlname
+    copy_file = "c:"+"\\"+"users\Daniel\Documents\\repos\Shell_Maker\\renders\\"+stlname
 
     os.system("copy.sh "+ original_file +" " +copy_file)
 
@@ -101,8 +117,10 @@ def slice(stlname, height):
         )
 
         solid.scad_render_to_file(s, "renders/" +str(i) +"a.scad")
-        print("toSTL.sh renders/" +str(i) + "a.scad renders/" +str(i) +"a.stl")
+        # print("toSTL.sh renders/" +str(i) + "a.scad renders/" +str(i) +"a.stl")
         os.system("toSTL.sh renders/" +str(i) + "a.scad renders/" +str(i) +"b.stl")
+        # solid.scad_render_to_file(s, "renders/" +str(i) +"b.stl", file_header="$fn=10;")
+
 
         bot, top = shell(str(i) +"b.stl")
         print(top[0])
@@ -174,7 +192,6 @@ def shell(stl):
             )
         )
     )
-
     solid.scad_render_to_file(M_bottom, "renders/" + "temp.scad")
     os.system("toSTL.sh renders/temp.scad renders/temp.stl")
     l1=[0,0]
@@ -187,7 +204,7 @@ def shell(stl):
         print("found bottom: " + str(dx1) + " " + str(dy1))
 
 
-    solid.scad_render_to_file(M_top, "renders/" + "temp2.scad")
+    solid.scad_render_to_file(M_top, "renders/" + "temp2.scad", file_header="$fn=10;")
     os.system("toSTL.sh renders/temp2.scad renders/temp2.stl")
     if os.path.exists("renders/temp2.stl"):
         temp_mesh2 = mesh.Mesh.from_file("renders/temp2.stl")
@@ -231,7 +248,7 @@ def angleSlice(angle, r, h):
         )
     )
     return an
-n = slice("CFFFP_Aeroshell-BasicBody-scaled2-top.stl", 1)
+# n = slice("CFFFP_Aeroshell-BasicBody-scaled2-top.stl", 1)
 # print(n)
 # combines(0, 15, 1)
 # angleSlice(45, 30, 5)

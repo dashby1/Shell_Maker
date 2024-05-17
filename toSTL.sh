@@ -1,1 +1,1 @@
-/c/Program\ Files/OpenSCAD/openscad.com -o $2 $1
+/c/Program\ Files\ \(x86\)/OpenSCAD/openscad.com -o $2 $1
