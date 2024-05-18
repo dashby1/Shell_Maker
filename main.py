@@ -3,8 +3,9 @@ import time
 import numpy
 from stl import mesh, Dimension
 
+
 from tkinter import Tk     # from tkinter import Tk for Python 3.x
-from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askopenfilename, askdirectory
 from mpl_toolkits.mplot3d import art3d
 from matplotlib import pyplot
 import solid
@@ -15,12 +16,15 @@ import subprocess
 
 root = Tk()
 
-file_path = askopenfilename()
+# file_path = askopenfilename()
 
-print(file_path)
-SCAD_FILE_PATH = file_path
-INPUT_FILE_PATH = 'C:/Users/Daniel/Documents/repos/Shell_Maker/renders'
-OUTPUT_PATH_DIR = "C:/Users/Daniel/Documents/repos/Shell_Maker/renders"
+# print(file_path)
+SCAD_FILE_PATH = "C:/Program Files/OpenSCAD/openscad.com"
+input = askopenfilename()
+INPUT_FILE_PATH = input
+output = askdirectory()
+print(output)
+OUTPUT_PATH_DIR = output
 
 
 def find_lengths(obj):
@@ -80,14 +84,14 @@ def Center(stlName):
     m_centered = solid.translate([-cog[0], -cog[1], -minz])(
         solid.import_stl(stlName)
     )
-    solid.scad_render_to_file(m_centered, 'temp.scad')
-    print(SCAD_FILE_PATH + " -o "+ stlName +" temp.scad")
-    subprocess.Popen(SCAD_FILE_PATH + " -o "+ stlName +" temp.scad")
+    solid.scad_render_to_file(m_centered, output + '/'+ 'temp.scad')
+    print(SCAD_FILE_PATH + " -o "+ stlName + " "+output + '/'+ 'temp.scad')
+    subprocess.Popen(SCAD_FILE_PATH + " -o "+ stlName + " "+output + '/'+ 'temp.scad')
     # os.system("toSTL.sh temp.scad " + stlName)
     time.sleep(5)
     os.remove("temp.scad")
 
-Center("Aeroshell-BasicBody-scaled2-top.stl")
+Center(input)
 
 def slice(stlname, height):
     os.system("del renders\*")
@@ -154,8 +158,8 @@ def slice(stlname, height):
                         angleSlice(45, maxdim, height2)
                     )
                 )
-
             )
+
             angle +=45
             a = CadOps.Model(piece, str(j))
             a.generate_Mesh()
@@ -252,102 +256,3 @@ def angleSlice(angle, r, h):
 # print(n)
 # combines(0, 15, 1)
 # angleSlice(45, 30, 5)
-
-
-# Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-# stlName = askopenfilename() # show an "Open" dialog box and return the path to the selected file
-#
-# your_mesh = mesh.Mesh.from_file(stlName)
-#
-# volume, cog, inertia = your_mesh.get_mass_properties()B
-# print("Volume                                  = {0}".format(volume))
-# print("Position of the center of gravity (COG) = {0}".format(cog))
-#
-# # Create a new plot
-# figure = pyplot.figure()
-# axes = figure.add_subplot(projection='3d')
-#
-# # Load the STL files and add the vectors to the plot
-# # axes.add_collection3d(art3d.Poly3DCollection(your_mesh.vectors))
-#
-# collection = art3d.Poly3DCollection(your_mesh.vectors, alpha=0.2)
-# axes.add_collection3d(collection)
-# axes.scatter(cog[0],cog[1],cog[2])
-#
-# # Auto scale to the mesh size
-# scale = your_mesh.points.flatten()
-# axes.auto_scale_xyz(scale, scale, scale)
-#
-# # Show the plot to the screen
-# # pyplot.show()
-#
-# m = solid.translate([-cog[0],-cog[1],-cog[2]])(
-#     solid.import_stl(stlName)
-# )
-#
-# m_small = solid.scale([0.9, 0.9, 0.85])(
-#     m
-# )
-#
-# shell = solid.difference()(
-#     m,
-#     m_small
-# )
-#
-# foam_sheet = solid.cube([1000, 1000, 25.7])
-# foam_sheet = solid.translate([-500, -500, 0])(
-#     foam_sheet
-# )
-#
-# cutout = solid.intersection()(
-#     m,
-#     foam_sheet
-# )
-#
-# sketch = solid.projection(cut=True)(
-#     cutout
-# )
-# offsetSketch = solid.offset(r=-20)(
-#     sketch
-# )
-# cutout_small = solid.linear_extrude(height=50)(
-#     offsetSketch
-# )
-#
-# # solid.scad_render_to_file(cutout, 'output.scad')
-# # os.system("toSTL.sh output.scad test5.stl")
-# #
-# # temp_mesh = mesh.Mesh.from_file("test5.stl")
-# # lenx, leny, lenz = find_lengths(temp_mesh)
-# # print(lenz)
-# #
-# # thickness = 4
-# #
-# # cutout_small = solid.resize([lenx-2*thickness,leny-2*thickness, lenz*20])(
-# #     cutout
-# # )
-#
-# ring = solid.difference()(
-#     cutout,
-#     cutout_small
-# )
-# f = open("log.txt")
-# path = f.readline()
-# print(path)
-# f.close()
-# path = path.replace(" ", "\ ")
-# path = path.replace("\n", "")
-# f = open("toSTL.sh", "w")
-# f.write(path + " -o $2 $1")
-# f.close()
-# solid.scad_render_to_file(ring, 'output.scad')
-# os.system("toSTL.sh output.scad ring5.stl")
-
-
-
-
-# solid.scad
-
-
-
-
