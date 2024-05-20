@@ -287,6 +287,39 @@ class DXF:
         y_c = y_sum/len(self.points)
         return (x_c, y_c)
 
+    def split(self, maxdim):
+        splits = []
+        length = 0
+        pieces = [[]]
+        prev = self.points[0]
+        for j in self.points:
+            length = length + math.sqrt((prev[0]-j[0])**2+(prev[1]-j[1])**2)
+            if length >= maxdim:
+                pieces[-1].append(j)
+                pieces.append([])
+                length = 0
+            pieces[-1].append(j)
+            prev = j
+        for j in pieces:
+            j.insert(0, [0,0])
+            piece = solid.linear_extrude(height=10)(solid.polygon(j))
+            splits.append(piece)
+        return splits
+    def refine_points(self):
+        i=0
+        while i <= len(self.points)+1:
+            while math.sqrt((self.points[0][0]-self.points[1][0])**2+(self.points[0][1]-self.points[1][1])**2) > 0.1:
+                self.points.insert(1, [(self.points[0][0]+self.points[1][0])/2, (self.points[0][1]+self.points[1][1])/2])
+                i = i-1
+            self.points.append(self.points.pop(0))
+            i+=1
+
 
 if __name__== "__main__":
-    test = DXF("renders/12.dxf")
+    test = DXF("C:/Users/Daniel/Documents/repos/Shell_Maker/output/0top_slice.dxf")
+    test.refine_points()
+    k = test.split(48)
+    for i in range(len(k)):
+        solid.scad_render_to_file(k[i], str(i) + ".scad")
+
+

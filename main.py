@@ -155,20 +155,19 @@ def slice(stlPath, height):
 
         solid.scad_render_to_file(ring, output + "/ring" + str(i) + ".scad")
 
-        angle = 0
-        maxdim = max(abs(maxx), abs(minx), abs(maxy), abs(miny))
-        height2 = (maxz - minz) * 3
-        while angle < 360:
+        if os.path.exists(output + "/" + str(i) + "bottom_slice.dxf"):
+            T_slice = CadOps.DXF(output + "/" + str(i) + "bottom_slice.dxf")
+        else:
+            T_slice = CadOps.DXF(output + "/" + str(i-1) + "bottom_slice.dxf")
+        T_slice.refine_points()
+        sections_cutters = T_slice.split(48)
+
+        for k in sections_cutters:
             piece = solid.intersection()(
                 ring,
-                solid.translate([0, 0, -height2 / 2])(
-                    solid.rotate([0, 0, angle])(
-                        angleSlice(45, maxdim, height2)
-                    )
-                )
+                solid.translate([0,0,i * height])(k)
             )
             print(j)
-            angle += 45
             a = CadOps.Model(piece, str(j), output, i, height)
             # a.generate_Mesh()
             # if (i != int(n)):
@@ -272,7 +271,7 @@ def angleSlice(angle, r, h):
 if __name__ == "__main__":
     # outputSTL(From="C:/Users/Daniel/Documents/repos/Shell_Maker/testOutput.scad", To="C:/Users/Daniel/Documents/repos/Shell_Maker/output/testing4.stl", PATH="C:/Program Files (x86)/OpenSCAD/openscad.com")
     Center(input_file)
-    n = slice(input_file, 1)
+    n = slice(input_file, 2)
     # print(n)
     # combines(0, 159, 1)
     # angleSlice(45, 30, 5)
