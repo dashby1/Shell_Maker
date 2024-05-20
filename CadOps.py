@@ -1,4 +1,5 @@
 import math
+import time
 
 from stl import mesh, Dimension
 
@@ -10,6 +11,15 @@ import solid
 import os
 import ezdxf
 import shapely.geometry as sg
+import subprocess
+from GUI import getSCADPath
+
+
+
+def outputSTL(From, To, PATH=getSCADPath()):
+    subprocess.Popen(PATH + " -o " + To + " " + From)
+    while not os.path.exists(To):
+        time.sleep(1)
 
 
 def get_size(i):
@@ -19,10 +29,14 @@ def get_size(i):
 
 
 class Model:
-    def __init__(self, model, fileName):
+    def __init__(self, model, fileName, location, layer, thickness):
+        self.location = location
         self.code = None
         self.fileName = fileName
         self.stl = fileName + ".stl"
+        self.layer = layer
+        self.thickness = thickness
+        self.maxz = (layer+1)*thickness
         self.dxf = fileName + ".dxf"
         self.scad = fileName + ".scad"
         self.model = model
@@ -68,22 +82,27 @@ class Model:
         outside = solid.translate([-width / 2, -width / 2])(solid.cube(max_dim + (length - 1) / 1000 + 0.001 + width))
         self.code = solid.difference()(outside, cubes)
         self.code = solid.projection(cut=True)(self.code)
-        solid.scad_render_to_file(self.code, "renders/code.scad")
-        os.system("toSTL.sh renders/code.scad renders/code.dxf")
-        return "renders/code.dxf"
+        solid.scad_render_to_file(self.code, self.location + "/code.scad")
+        outputSTL(From=self.location+"/code.scad", To=self.location+"code.dxf", PATH=getSCADPath())
+        # os.system("toSTL.sh renders/code.scad renders/code.dxf")
+        return self.location+"/code.dxf"
 
     def download(self, type):
         if type =="stl":
-            print("generating:" + "renders/"+ self.fileName+".stl")
-            os.system("toSTL.sh renders/"+ self.fileName+".scad renders/"+ self.fileName+".stl")
+            print("generating:" + self.location+"/"+ self.fileName+".stl")
+            outputSTL(From=self.location+"/"+self.fileName+".scad", To=self.location+"/"+self.fileName+".stl")
+            # os.system("toSTL.sh renders/"+ self.fileName+".scad renders/"+ self.fileName+".stl")
         elif type == "dxf":
-            os.system("toSTL.sh renders/"+ self.fileName+".scad renders/"+ self.fileName+".dxf")
+            outputSTL(From=self.location+"/"+self.fileName+".scad", To=self.location+"/"+self.fileName+".dxf")
+            # os.system("toSTL.sh renders/"+ self.fileName+".scad renders/"+ self.fileName+".dxf")
 
     def render(self):
-        solid.scad_render_to_file(self.model, 'renders/'+ self.fileName+'.scad')
+        solid.scad_render_to_file(self.model, self.location+"/"+ self.fileName+'.scad')
+        while not os.path.exists(self.location+"/"+self.fileName+".scad"):
+            time.sleep(1)
 
     def get_points(self):
-        doc = ezdxf.readfile(filename="renders/"+ self.fileName+".dxf")
+        doc = ezdxf.readfile(filename=self.location+"/"+ self.fileName+".dxf")
         msp = doc.modelspace()
         i=0
         lists = []
@@ -129,7 +148,7 @@ class Model:
     def add_code(self):
         dxf = solid.projection(cut=False)(self.model)
         offset = solid.offset(r=-0.1)(dxf)
-        solid.scad_render_to_file(offset, 'renders/offset.scad')
+        solid.scad_render_to_file(offset, self.location+'/offset.scad')
         os.system("toSTL.sh renders/offset.scad renders/offset.dxf")
         lines = self.get_points2("renders/offset.dxf")
         x = lines[0][0][0][0]
@@ -146,7 +165,8 @@ class Model:
 
     def add_label(self, pos):
         # num = 12
-        minx, maxx, miny, maxy, minz, maxz = self.find_minmax()
+        # minx, maxx, miny, maxy, minz, maxz = self.find_minmax()
+        maxz = self.maxz
         # label = solid.linear_extrude(height=(maxz-minz)/3)(solid.text(str(self.fileName), size=0.5, halign="center"))
         # i=minx
         # print("x-len: " + str(maxx-minx))
@@ -165,7 +185,7 @@ class Model:
         #     i += 0.5
         for i in str(self.fileName):
             cur = pos[0]
-            label = solid.translate([pos[0][0], pos[0][1], maxz-0.2])(solid.linear_extrude(height=(maxz-minz)/3)(solid.text(str(i), size=0.5, halign="center")))
+            label = solid.translate([pos[0][0], pos[0][1], self.maxz-0.2])(solid.linear_extrude(height=(self.thickness)/3)(solid.text(str(i), size=0.5, halign="center", valign="center")))
             self.model = solid.difference()(self.model, label)
             pos.append(pos.pop(0))
             while abs(cur[0]-pos[0][0])<0.5 and abs(cur[1]-pos[0][1])<0.5:
@@ -206,17 +226,18 @@ class Model:
         lenz = maxz - minz
         return minx, maxx, miny, maxy, minz, maxz
 
-    def generate_Mesh(self):
-        self.mesh = mesh.Mesh.from_file("renders/" + str(int(self.fileName)//8)+ "b.stl")
+    # def generate_Mesh(self):
+    #     self.mesh = mesh.Mesh.from_file(self.location + "/" + str(int(self.fileName)//8)+ "b.stl")
 
     def get_top(self):
-        minx, maxx, miny, maxy, minz, maxz = self.find_minmax()
-        top = solid.projection(cut=True)(solid.translate([0,0,-1*maxz])(self.model))
-        useable_area = solid.offset(r=-0.49)(top)
+        top = solid.projection(cut=True)(solid.translate([0,0,-1*self.thickness*(self.layer+1)])(self.model))
+        useable_area = solid.offset(r=-0.45)(top)
         self.useable_area = useable_area
-        solid.scad_render_to_file(self.useable_area, 'renders/' + 'toptemp.scad')
-        os.system("toSTL.sh renders/toptemp.scad renders/" + self.fileName + ".dxf")
-        dxf = DXF("renders/" + self.fileName + ".dxf")
+        solid.scad_render_to_file(self.useable_area, self.location+'/' + 'toptemp.scad')
+        outputSTL(From=self.location+'/' + 'toptemp.scad', To=self.location+"/top"+ self.dxf)
+
+        # os.system("toSTL.sh out/toptemp.scad renders/" + self.fileName + ".dxf")
+        dxf = DXF(self.location+"/top"+ self.dxf)
         min_p=dxf.points[0][0]
         points_ordered = dxf.points
         i=0
@@ -232,14 +253,9 @@ class Model:
                 min_p = dxf.points[0][0]
                 points_ordered = dxf.points.copy()
         dxf.points = points_ordered.copy()
-        for i in dxf.points:
-            plt.scatter(x=i[0], y=i[1])
 
         print(dxf.points)
         self.add_label(dxf.points)
-
-
-
 
 class DXF:
     def __init__(self, file):
