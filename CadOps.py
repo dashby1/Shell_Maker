@@ -21,13 +21,6 @@ def outputSTL(From, To, PATH=getSCADPath()):
     while not os.path.exists(To):
         time.sleep(1)
 
-
-def get_size(i):
-    x_list = [int(a) for a in str(i)]
-    return len(x_list)
-
-
-
 class Model:
     def __init__(self, model, fileName, location, layer, thickness):
         self.location = location
@@ -100,6 +93,7 @@ class Model:
         solid.scad_render_to_file(self.model, self.location+"/"+ self.fileName+'.scad')
         while not os.path.exists(self.location+"/"+self.fileName+".scad"):
             time.sleep(1)
+        # outputSTL(From= self.location+"/"+ self.fileName+'.scad', To=self.location+"/"+ self.fileName+'.stl')
 
     def get_points(self):
         doc = ezdxf.readfile(filename=self.location+"/"+ self.fileName+".dxf")
@@ -291,7 +285,8 @@ class DXF:
         splits = []
         length = 0
         pieces = [[]]
-        prev = self.points[0]
+        prev = self.points[-1]
+        pieces[-1].append(prev)
         for j in self.points:
             length = length + math.sqrt((prev[0]-j[0])**2+(prev[1]-j[1])**2)
             if length >= maxdim:

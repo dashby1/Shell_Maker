@@ -30,6 +30,12 @@ def getOutputDir(e):
     e.delete(0, "end")
     e.insert(0, path)
 
+def open_popup(win):
+   top= Toplevel(win)
+   top.geometry("750x250")
+   top.title("Child Window")
+   Label(top, text= "Hello World!", font=('Mistral 18 bold')).place(x=150,y=80)
+
 
 
 if __name__ == "__main__":
